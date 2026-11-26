@@ -79,18 +79,36 @@
       background: var(--sage-soft);
       color: var(--sage);
     }
+    button.filter-active {
+      background: var(--amber);
+      color: #fff;
+    }
     button.danger {
       background: var(--danger-soft);
       color: var(--danger);
+    }
+    button.danger-solid {
+      background: var(--danger);
+      color: #fff;
     }
     .tabs {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
     .tabs button { padding: 10px; }
     .tabs button.inactive { background: var(--bg); color: var(--muted); }
+    .sub-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .sub-bar button {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
     .card {
       border: 1px solid var(--border);
       border-radius: 14px;
@@ -105,6 +123,14 @@
       padding: 9px 11px;
       border-radius: 10px;
       background: var(--amber-soft);
+      font-size: 12.5px;
+    }
+    .confirm-box {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      background: var(--danger-soft);
+      color: var(--danger);
       font-size: 12.5px;
     }
     .notice {
@@ -124,7 +150,7 @@
 <body>
   <div class="app">
     <header>
-      <div class="brand">SORT</div>
+      <div class="brand">SORT <span style="font-size:11px;font-weight:600;opacity:0.7;">v0.5</span></div>
       <span class="pill">100% gratuit • Sans swipe</span>
     </header>
 
@@ -138,6 +164,10 @@
     <div class="tabs">
       <button id="tabFeed" type="button" onclick="setTab('feed')">Sorties locales</button>
       <button id="tabCreate" type="button" class="inactive" onclick="setTab('create')">Créer une sortie</button>
+    </div>
+
+    <div id="feedSubBar" class="sub-bar">
+      <button id="btnSavedFilter" type="button" class="secondary" onclick="toggleSavedFilter()">Mes sorties enregistrées (0)</button>
     </div>
 
     <div id="viewFeed"></div>
@@ -195,6 +225,8 @@
     ];
 
     let savedByUser = {};
+    let onlySaved = false;
+    let pendingDeleteId = null;
 
     let events = [
       {
@@ -246,31 +278,55 @@
       return Array.isArray(savedByUser[userId]) && savedByUser[userId].includes(eventId);
     }
 
+    function toggleSavedFilter() {
+      onlySaved = !onlySaved;
+      render();
+    }
+
     function toggleSave(eventId) {
       const me = getUser(document.getElementById("currentUser").value);
       const list = savedByUser[me.id] || [];
       if (list.includes(eventId)) {
         savedByUser[me.id] = list.filter(id => id !== eventId);
         render();
-        showMsg("Sortie retirée de tes enregistrées.");
+        showMsg(`Sortie retirée des enregistrées pour ${me.name}.`);
       } else {
         savedByUser[me.id] = [...list, eventId];
         render();
-        showMsg("Sortie enregistrée.");
+        showMsg(`Sortie enregistrée uniquement pour ${me.name}.`);
       }
     }
 
-    function deleteEventByHost(eventId) {
+    function askDeleteEvent(eventId) {
+      pendingDeleteId = eventId;
+      render();
+    }
+
+    function cancelDeleteEvent() {
+      pendingDeleteId = null;
+      render();
+    }
+
+    function confirmDeleteEvent(eventId) {
       const me = getUser(document.getElementById("currentUser").value);
-      const ev = events.find(x => x.id === eventId);
-      if (!ev) return;
-      if (ev.hostId !== me.id) {
+      const idx = events.findIndex(x => String(x.id) === String(eventId));
+      if (idx === -1) {
+        showMsg("Sortie introuvable.", true);
+        return;
+      }
+      const ev = events[idx];
+      if (String(ev.hostId) !== String(me.id)) {
         showMsg("Seul le créateur peut supprimer cette sortie.", true);
         return;
       }
-      events = events.filter(x => x.id !== eventId);
+      const deletedTitle = ev.title;
+      events.splice(idx, 1);
+      pendingDeleteId = null;
+      Object.keys(savedByUser).forEach(uid => {
+        savedByUser[uid] = (savedByUser[uid] || []).filter(id => String(id) !== String(eventId));
+      });
       render();
-      showMsg(`Sortie "${ev.title}" supprimée par son créateur.`);
+      showMsg(`Sortie "${deletedTitle}" supprimée.`);
     }
 
     function syncMixityRules() {
@@ -291,6 +347,12 @@
       }
     }
 
+    function hideMsg() {
+      const el = document.getElementById("feedback");
+      el.textContent = "";
+      el.className = "notice hidden";
+    }
+
     function showMsg(text, isErr = false) {
       const el = document.getElementById("feedback");
       el.textContent = text;
@@ -299,14 +361,19 @@
     }
 
     function onUserChange() {
+      pendingDeleteId = null;
+      onlySaved = false;
+      hideMsg();
       syncMixityRules();
       render();
     }
 
     function setTab(tab) {
       activeTab = tab;
+      pendingDeleteId = null;
       document.getElementById("viewFeed").classList.toggle("hidden", tab !== "feed");
       document.getElementById("viewCreate").classList.toggle("hidden", tab !== "create");
+      document.getElementById("feedSubBar").classList.toggle("hidden", tab !== "feed");
       document.getElementById("tabFeed").className = tab === "feed" ? "" : "inactive";
       document.getElementById("tabCreate").className = tab === "create" ? "" : "inactive";
       if (tab === "create") syncMixityRules();
@@ -327,7 +394,7 @@
         const bringGear = document.getElementById("evBringGear").value.trim();
 
         events.unshift({
-          id: "e" + Date.now(),
+          id: "e_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
           title,
           hostId: me.id,
           totalSpots,
@@ -351,12 +418,12 @@
 
     function toggleJoin(eventId) {
       const me = getUser(document.getElementById("currentUser").value);
-      const ev = events.find(x => x.id === eventId);
+      const ev = events.find(x => String(x.id) === String(eventId));
       if (!ev) return;
 
       if (ev.participants.includes(me.id)) {
         if (ev.hostId === me.id) {
-          showMsg("Tu es l'organisateur : utilise « Supprimer la sortie » pour la retirer.", true);
+          showMsg("Tu es l'organisateur : clique sur « Supprimer la sortie » pour la retirer.", true);
           return;
         }
         ev.participants = ev.participants.filter(id => id !== me.id);
@@ -388,18 +455,32 @@
       const me = getUser(document.getElementById("currentUser").value);
       const container = document.getElementById("viewFeed");
 
-      const visibleEvents = events.filter(ev => !isBlockedWithAnyParticipant(me.id, ev.participants));
+      const baseVisible = events.filter(ev => !isBlockedWithAnyParticipant(me.id, ev.participants));
+      const savedCount = baseVisible.filter(ev => isSaved(me.id, ev.id)).length;
+
+      const filterBtn = document.getElementById("btnSavedFilter");
+      filterBtn.textContent = onlySaved
+        ? `Afficher toutes les sorties (${baseVisible.length})`
+        : `Mes sorties enregistrées (${savedCount})`;
+      filterBtn.className = onlySaved ? "filter-active" : "secondary";
+
+      const visibleEvents = onlySaved
+        ? baseVisible.filter(ev => isSaved(me.id, ev.id))
+        : baseVisible;
 
       if (!visibleEvents.length) {
-        container.innerHTML = `<div class="card"><div class="meta">Aucune sortie visible ici pour le moment.</div></div>`;
+        container.innerHTML = `<div class="card"><div class="meta">${
+          onlySaved ? "Aucune sortie enregistrée pour ce profil." : "Aucune sortie visible ici pour le moment."
+        }</div></div>`;
         return;
       }
 
       container.innerHTML = visibleEvents.map(ev => {
         const host = getUser(ev.hostId);
-        const isHost = ev.hostId === me.id;
+        const isHost = String(ev.hostId) === String(me.id);
         const joined = ev.participants.includes(me.id);
         const saved = isSaved(me.id, ev.id);
+        const isConfirmingDelete = isHost && String(pendingDeleteId) === String(ev.id);
         const names = ev.participants.map(id => getUser(id).name).join(", ");
         const locationText = joined
           ? `<strong>RDV précis :</strong> ${ev.exactSpot} (${ev.zone})`
@@ -427,7 +508,7 @@
               <div class="row">
                 ${
                   isHost
-                    ? `<button type="button" class="danger" onclick="deleteEventByHost('${ev.id}')">Supprimer la sortie</button>`
+                    ? `<button type="button" class="danger" onclick="askDeleteEvent('${ev.id}')">Supprimer la sortie</button>`
                     : joined
                       ? `<button type="button" class="danger" onclick="toggleJoin('${ev.id}')">Me désister</button>`
                       : `<button type="button" onclick="toggleJoin('${ev.id}')">Je suis chaud</button>`
@@ -435,6 +516,17 @@
                 <button type="button" class="secondary" onclick="toggleSave('${ev.id}')">${saved ? "Enregistrée ✓" : "Enregistrer"}</button>
               </div>
             </div>
+            ${
+              isConfirmingDelete
+                ? `<div class="confirm-box">
+                     <div>Supprimer définitivement cette sortie ?</div>
+                     <div style="margin-top:8px;" class="row">
+                       <button type="button" class="danger-solid" onclick="confirmDeleteEvent('${ev.id}')">Oui, supprimer</button>
+                       <button type="button" class="secondary" onclick="cancelDeleteEvent()">Annuler</button>
+                     </div>
+                   </div>`
+                : ""
+            }
           </div>
         `;
       }).join("");
