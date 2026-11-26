@@ -68,21 +68,12 @@
       padding: 9px 11px;
     }
     input, textarea, select { width: 100%; background: #fff; color: var(--ink); }
-    textarea { min-height: 62px; resize: vertical; }
     button {
       cursor: pointer;
       background: var(--sage);
       color: #fff;
       border: none;
       font-weight: 600;
-    }
-    button.secondary {
-      background: var(--sage-soft);
-      color: var(--sage);
-    }
-    button.warn {
-      background: var(--amber-soft);
-      color: var(--amber);
     }
     button.danger {
       background: var(--danger-soft);
@@ -135,26 +126,26 @@
 
     <div class="user-bar">
       <span style="white-space:nowrap; font-weight:600;">Moi :</span>
-      <select id="currentUser" onchange="render()"></select>
+      <select id="currentUser" onchange="onUserChange()"></select>
     </div>
 
     <div id="feedback" class="notice hidden"></div>
 
     <div class="tabs">
-      <button id="tabFeed" onclick="setTab('feed')">Sorties locales</button>
-      <button id="tabCreate" class="inactive" onclick="setTab('create')">Créer une sortie</button>
+      <button id="tabFeed" type="button" onclick="setTab('feed')">Sorties locales</button>
+      <button id="tabCreate" type="button" class="inactive" onclick="setTab('create')">Créer une sortie</button>
     </div>
 
     <div id="viewFeed"></div>
 
     <div id="viewCreate" class="hidden">
-      <div class="card">
+      <form id="createForm" class="card" onsubmit="handleCreateSubmit(event)">
         <div class="field">
-          <label>Titre de la sortie</label>
+          <label for="evTitle">Titre de la sortie</label>
           <input id="evTitle" placeholder="Ex. : Balade parc + Switch" />
         </div>
         <div class="field">
-          <label>Nombre de places au total (2 = 1v1, 3 à 6 = groupe)</label>
+          <label for="evSpots">Nombre de places au total (2 = 1v1, 3 à 6 = groupe)</label>
           <select id="evSpots" onchange="syncMixityRules()">
             <option value="2">2 personnes (1v1 — mixte obligatoire)</option>
             <option value="3" selected>3 personnes (groupe)</option>
@@ -163,27 +154,27 @@
           </select>
         </div>
         <div class="field">
-          <label>Public / Mixité</label>
+          <label for="evMixity">Public / Mixité</label>
           <select id="evMixity"></select>
         </div>
         <div class="field">
-          <label>Zone approximative (publique)</label>
+          <label for="evZone">Zone approximative (publique)</label>
           <input id="evZone" value="Centre-ville / Parc" />
         </div>
         <div class="field">
-          <label>Point de RDV précis (visible après validation)</label>
+          <label for="evExact">Point de RDV précis (visible après validation)</label>
           <input id="evExact" value="Entrée principale près de la fontaine" />
         </div>
         <div class="field">
-          <label>Matériel déjà prévu par l'organisateur (optionnel)</label>
+          <label for="evHasGear">Matériel déjà prévu par l'organisateur (optionnel)</label>
           <input id="evHasGear" placeholder="Ex. : 2 manettes, ballon, enceinte" />
         </div>
         <div class="field">
-          <label>Ce que les participants peuvent ramener (optionnel)</label>
+          <label for="evBringGear">Ce que les participants peuvent ramener (optionnel)</label>
           <input id="evBringGear" placeholder="Ex. : eau, chips, jeu de cartes" />
         </div>
-        <button style="width:100%;" onclick="createEvent()">Publier la sortie</button>
-      </div>
+        <button id="publishBtn" type="submit" style="width:100%;">Publier la sortie</button>
+      </form>
     </div>
   </div>
 
@@ -196,7 +187,7 @@
     ];
 
     const blockedPairs = [
-      ["u1", "u3"] // Léa et Mehdi bloqués entre eux : masquage croisé sur les sorties d'un tiers
+      ["u1", "u3"]
     ];
 
     let events = [
@@ -235,7 +226,7 @@
     }
 
     function getUser(id) {
-      return users.find(u => u.id === id);
+      return users.find(u => u.id === id) || users[0];
     }
 
     function isBlockedWithAnyParticipant(viewerId, participantIds) {
@@ -270,6 +261,11 @@
       el.classList.remove("hidden");
     }
 
+    function onUserChange() {
+      syncMixityRules();
+      render();
+    }
+
     function setTab(tab) {
       activeTab = tab;
       document.getElementById("viewFeed").classList.toggle("hidden", tab !== "feed");
@@ -280,34 +276,40 @@
       render();
     }
 
-    function createEvent() {
-      const me = getUser(document.getElementById("currentUser").value);
-      const title = document.getElementById("evTitle").value.trim() || "Sortie amicale";
-      const totalSpots = Number(document.getElementById("evSpots").value);
-      const mixity = totalSpots === 2 ? "Mixte" : document.getElementById("evMixity").value;
-      const zone = document.getElementById("evZone").value.trim() || "À proximité";
-      const exactSpot = document.getElementById("evExact").value.trim() || "Point de RDV confirmé aux inscrits";
-      const hasGear = document.getElementById("evHasGear").value.trim();
-      const bringGear = document.getElementById("evBringGear").value.trim();
+    function handleCreateSubmit(e) {
+      e.preventDefault();
+      try {
+        const me = getUser(document.getElementById("currentUser").value);
+        const titleInput = document.getElementById("evTitle").value.trim();
+        const title = titleInput || "Sortie amicale";
+        const totalSpots = Number(document.getElementById("evSpots").value) || 3;
+        const mixity = totalSpots === 2 ? "Mixte" : (document.getElementById("evMixity").value || "Mixte");
+        const zone = document.getElementById("evZone").value.trim() || "À proximité";
+        const exactSpot = document.getElementById("evExact").value.trim() || "Point de RDV confirmé aux inscrits";
+        const hasGear = document.getElementById("evHasGear").value.trim();
+        const bringGear = document.getElementById("evBringGear").value.trim();
 
-      events.unshift({
-        id: "e" + Date.now(),
-        title,
-        hostId: me.id,
-        totalSpots,
-        mixity,
-        zone,
-        exactSpot,
-        hasGear,
-        bringGear,
-        participants: [me.id]
-      });
+        events.unshift({
+          id: "e" + Date.now(),
+          title,
+          hostId: me.id,
+          totalSpots,
+          mixity,
+          zone,
+          exactSpot,
+          hasGear,
+          bringGear,
+          participants: [me.id]
+        });
 
-      document.getElementById("evTitle").value = "";
-      document.getElementById("evHasGear").value = "";
-      document.getElementById("evBringGear").value = "";
-      showMsg("Sortie publiée !");
-      setTab("feed");
+        document.getElementById("evTitle").value = "";
+        document.getElementById("evHasGear").value = "";
+        document.getElementById("evBringGear").value = "";
+        setTab("feed");
+        showMsg(`Sortie "${title}" publiée par ${me.name} !`);
+      } catch (err) {
+        showMsg("Erreur lors de la publication : " + err.message, true);
+      }
     }
 
     function toggleJoin(eventId) {
@@ -321,8 +323,8 @@
           return;
         }
         ev.participants = ev.participants.filter(id => id !== me.id);
-        showMsg("Tu t'es désisté : la place s'est libérée.");
         render();
+        showMsg("Tu t'es désisté : la place s'est libérée.");
         return;
       }
 
@@ -341,12 +343,11 @@
       }
 
       ev.participants.push(me.id);
-      showMsg("Inscription validée ! Point de RDV précis débloqué.");
       render();
+      showMsg("Inscription validée ! Point de RDV précis débloqué.");
     }
 
     function render() {
-      syncMixityRules();
       const me = getUser(document.getElementById("currentUser").value);
       const container = document.getElementById("viewFeed");
 
@@ -388,8 +389,8 @@
                 ev.hostId === me.id
                   ? `<span class="meta">Tu organises cette sortie</span>`
                   : joined
-                    ? `<button class="danger" onclick="toggleJoin('${ev.id}')">Me désister</button>`
-                    : `<button onclick="toggleJoin('${ev.id}')">Je suis chaud</button>`
+                    ? `<button type="button" class="danger" onclick="toggleJoin('${ev.id}')">Me désister</button>`
+                    : `<button type="button" onclick="toggleJoin('${ev.id}')">Je suis chaud</button>`
               }
             </div>
           </div>
