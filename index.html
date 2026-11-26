@@ -93,11 +93,15 @@
     }
     .tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
       margin-bottom: 10px;
     }
-    .tabs button { padding: 10px; }
+    .tabs button {
+      padding: 9px 6px;
+      font-size: 12.5px;
+      line-height: 1.25;
+    }
     .tabs button.inactive { background: var(--bg); color: var(--muted); }
     .sub-bar {
       display: flex;
@@ -168,7 +172,7 @@
 <body>
   <div class="app">
     <header>
-      <div class="brand">SORT <span style="font-size:11px;font-weight:600;opacity:0.7;">v0.8</span></div>
+      <div class="brand">SORT <span style="font-size:11px;font-weight:600;opacity:0.7;">v0.9</span></div>
       <span class="pill">100% gratuit • Sans swipe</span>
     </header>
 
@@ -180,15 +184,17 @@
     <div id="feedback" class="notice hidden"></div>
 
     <div class="tabs">
-      <button id="tabFeed" type="button" onclick="setTab('feed')">Sorties locales</button>
-      <button id="tabCreate" type="button" class="inactive" onclick="setTab('create')">Créer une sortie</button>
+      <button id="tabLocal" type="button" onclick="setTab('local')">Sorties locales</button>
+      <button id="tabMine" type="button" class="inactive" onclick="setTab('mine')">Sorties créées</button>
+      <button id="tabCreate" type="button" class="inactive" onclick="setTab('create')">+ Créer</button>
     </div>
 
-    <div id="feedSubBar" class="sub-bar">
+    <div id="localSubBar" class="sub-bar">
       <button id="btnSavedFilter" type="button" class="secondary" onclick="toggleSavedFilter()">Mes sorties enregistrées (0)</button>
     </div>
 
-    <div id="viewFeed"></div>
+    <div id="viewLocal"></div>
+    <div id="viewMine" class="hidden"></div>
 
     <div id="viewCreate" class="hidden">
       <form id="createForm" class="card" onsubmit="handleCreateSubmit(event)">
@@ -284,7 +290,7 @@
       }
     ];
 
-    let activeTab = "feed";
+    let activeTab = "local";
 
     function initSelects() {
       const sel = document.getElementById("currentUser");
@@ -402,11 +408,15 @@
     function setTab(tab) {
       activeTab = tab;
       pendingDeleteId = null;
-      document.getElementById("viewFeed").classList.toggle("hidden", tab !== "feed");
+      document.getElementById("viewLocal").classList.toggle("hidden", tab !== "local");
+      document.getElementById("viewMine").classList.toggle("hidden", tab !== "mine");
       document.getElementById("viewCreate").classList.toggle("hidden", tab !== "create");
-      document.getElementById("feedSubBar").classList.toggle("hidden", tab !== "feed");
-      document.getElementById("tabFeed").className = tab === "feed" ? "" : "inactive";
+      document.getElementById("localSubBar").classList.toggle("hidden", tab !== "local");
+
+      document.getElementById("tabLocal").className = tab === "local" ? "" : "inactive";
+      document.getElementById("tabMine").className = tab === "mine" ? "" : "inactive";
       document.getElementById("tabCreate").className = tab === "create" ? "" : "inactive";
+
       if (tab === "create") syncMixityRules();
       render();
     }
@@ -443,8 +453,8 @@
         document.getElementById("evTitle").value = "";
         document.getElementById("evHasGear").value = "";
         document.getElementById("evBringGear").value = "";
-        setTab("feed");
-        showMsg(`Sortie "${title}" publiée (${accessMode === "auto" ? "validation auto" : "validation manuelle"}).`);
+        setTab("mine");
+        showMsg(`Sortie "${title}" publiée dans tes sorties créées.`);
       } catch (err) {
         showMsg("Erreur lors de la publication : " + err.message, true);
       }
@@ -455,11 +465,12 @@
       const ev = events.find(x => String(x.id) === String(eventId));
       if (!ev) return;
 
+      if (String(ev.hostId) === String(me.id)) {
+        showMsg("Gère ta sortie depuis l'onglet « Sorties créées ».", true);
+        return;
+      }
+
       if (ev.participants.includes(me.id)) {
-        if (ev.hostId === me.id) {
-          showMsg("Tu es l'organisateur : clique sur « Supprimer la sortie » pour la retirer.", true);
-          return;
-        }
         ev.participants = ev.participants.filter(id => id !== me.id);
         render();
         showMsg("Tu t'es désisté : la place s'est libérée.");
@@ -540,112 +551,129 @@
       showMsg(`${applicant.name} a été accepté(e) sur la sortie.`);
     }
 
+    function renderEventCard(ev, me, isManagementView) {
+      const host = getUser(ev.hostId);
+      const isHost = String(ev.hostId) === String(me.id);
+      const joined = ev.participants.includes(me.id);
+      const pending = ev.pendingIds.includes(me.id);
+      const saved = isSaved(me.id, ev.id);
+      const isConfirmingDelete = isHost && String(pendingDeleteId) === String(ev.id);
+      const names = ev.participants.map(id => getUser(id).name).join(", ");
+      const locationText = (joined || isManagementView)
+        ? `<strong>RDV précis :</strong> ${ev.exactSpot} (${ev.zone})`
+        : `<strong>Zone :</strong> ${ev.zone} <em>(RDV exact après validation)</em>`;
+
+      const gearHtml = (ev.hasGear || ev.bringGear) ? `
+        <div class="gear-box">
+          ${ev.hasGear ? `<div><strong>Déjà prévu :</strong> ${ev.hasGear}</div>` : ""}
+          ${ev.bringGear ? `<div><strong>À ramener :</strong> ${ev.bringGear}</div>` : ""}
+        </div>
+      ` : "";
+
+      const hostRequestsHtml = (isManagementView && ev.accessMode === "manual" && ev.pendingIds.length) ? `
+        <div class="req-box">
+          <strong>À valider manuellement (${ev.pendingIds.length}) :</strong>
+          ${ev.pendingIds.map(pid => {
+            const u = getUser(pid);
+            return `
+              <div class="req-item">
+                <div><strong>${u.name}</strong> • ${u.age} ans • ${u.gender}</div>
+                <div class="meta">Vibe : ${u.vibe}</div>
+                <div style="margin-top:6px;" class="row">
+                  <button type="button" onclick="reviewRequest('${ev.id}', '${u.id}', true)">Accepter</button>
+                  <button type="button" class="danger" onclick="reviewRequest('${ev.id}', '${u.id}', false)">Refuser</button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      ` : "";
+
+      const formatLabel = ev.totalSpots === 2 ? "1v1 (2 max)" : `Groupe (${ev.totalSpots} max)`;
+      const accessLabel = ev.accessMode === "auto" ? "Validation auto" : "Validation manuelle";
+
+      let leftBtns = "";
+      if (isManagementView) {
+        leftBtns = `<button type="button" class="danger" onclick="askDeleteEvent('${ev.id}')">Supprimer la sortie</button>`;
+      } else if (joined) {
+        leftBtns = `<button type="button" class="danger" onclick="toggleJoin('${ev.id}')">Me désister</button>`;
+      } else if (pending) {
+        leftBtns = `<button type="button" class="filter-active" onclick="toggleJoin('${ev.id}')">En attente (annuler)</button>`;
+      } else {
+        leftBtns = `<button type="button" onclick="toggleJoin('${ev.id}')">Je suis chaud</button>`;
+      }
+
+      return `
+        <div class="card">
+          <div class="row">
+            <strong>${ev.title}</strong>
+            <span class="pill">${ev.mixity} • ${formatLabel}</span>
+          </div>
+          <div class="meta">Organisé par ${host.name} • ${accessLabel} • Places : ${ev.participants.length}/${ev.totalSpots} (${names})</div>
+          <div class="meta">${locationText}</div>
+          ${gearHtml}
+          ${hostRequestsHtml}
+          <div style="margin-top:10px;" class="row">
+            <div class="row">
+              ${leftBtns}
+              <button type="button" class="secondary" onclick="toggleSave('${ev.id}')">${saved ? "Enregistrée ✓" : "Enregistrer"}</button>
+            </div>
+          </div>
+          ${
+            isConfirmingDelete
+              ? `<div class="confirm-box">
+                   <div>Supprimer définitivement cette sortie ?</div>
+                   <div style="margin-top:8px;" class="row">
+                     <button type="button" class="danger-solid" onclick="confirmDeleteEvent('${ev.id}')">Oui, supprimer</button>
+                     <button type="button" class="secondary" onclick="cancelDeleteEvent()">Annuler</button>
+                   </div>
+                 </div>`
+              : ""
+          }
+        </div>
+      `;
+    }
+
     function render() {
       const me = getUser(document.getElementById("currentUser").value);
-      const container = document.getElementById("viewFeed");
+      const localContainer = document.getElementById("viewLocal");
+      const mineContainer = document.getElementById("viewMine");
 
-      const baseVisible = events.filter(ev => !isBlockedWithAnyParticipant(me.id, ev.participants));
-      const savedCount = baseVisible.filter(ev => isSaved(me.id, ev.id)).length;
+      const myEvents = events.filter(ev => String(ev.hostId) === String(me.id));
+      const pendingTotal = myEvents.reduce((acc, ev) => acc + (ev.accessMode === "manual" ? ev.pendingIds.length : 0), 0);
+      document.getElementById("tabMine").textContent = pendingTotal > 0
+        ? `Sorties créées (${pendingTotal})`
+        : "Sorties créées";
+
+      const localPool = events.filter(ev =>
+        String(ev.hostId) !== String(me.id) &&
+        !isBlockedWithAnyParticipant(me.id, ev.participants)
+      );
+      const savedCount = localPool.filter(ev => isSaved(me.id, ev.id)).length;
 
       const filterBtn = document.getElementById("btnSavedFilter");
       filterBtn.textContent = onlySaved
-        ? `Afficher toutes les sorties (${baseVisible.length})`
+        ? `Afficher toutes les sorties locales (${localPool.length})`
         : `Mes sorties enregistrées (${savedCount})`;
       filterBtn.className = onlySaved ? "filter-active" : "secondary";
 
-      const visibleEvents = onlySaved
-        ? baseVisible.filter(ev => isSaved(me.id, ev.id))
-        : baseVisible;
+      const visibleLocal = onlySaved
+        ? localPool.filter(ev => isSaved(me.id, ev.id))
+        : localPool;
 
-      if (!visibleEvents.length) {
-        container.innerHTML = `<div class="card"><div class="meta">${
-          onlySaved ? "Aucune sortie enregistrée pour ce profil." : "Aucune sortie visible ici pour le moment."
+      if (!visibleLocal.length) {
+        localContainer.innerHTML = `<div class="card"><div class="meta">${
+          onlySaved ? "Aucune sortie locale enregistrée pour ce profil." : "Aucune sortie locale disponible ici pour le moment."
         }</div></div>`;
-        return;
+      } else {
+        localContainer.innerHTML = visibleLocal.map(ev => renderEventCard(ev, me, false)).join("");
       }
 
-      container.innerHTML = visibleEvents.map(ev => {
-        const host = getUser(ev.hostId);
-        const isHost = String(ev.hostId) === String(me.id);
-        const joined = ev.participants.includes(me.id);
-        const pending = ev.pendingIds.includes(me.id);
-        const saved = isSaved(me.id, ev.id);
-        const isConfirmingDelete = isHost && String(pendingDeleteId) === String(ev.id);
-        const names = ev.participants.map(id => getUser(id).name).join(", ");
-        const locationText = joined
-          ? `<strong>RDV précis :</strong> ${ev.exactSpot} (${ev.zone})`
-          : `<strong>Zone :</strong> ${ev.zone} <em>(RDV exact après validation)</em>`;
-
-        const gearHtml = (ev.hasGear || ev.bringGear) ? `
-          <div class="gear-box">
-            ${ev.hasGear ? `<div><strong>Déjà prévu :</strong> ${ev.hasGear}</div>` : ""}
-            ${ev.bringGear ? `<div><strong>À ramener :</strong> ${ev.bringGear}</div>` : ""}
-          </div>
-        ` : "";
-
-        const hostRequestsHtml = (isHost && ev.accessMode === "manual" && ev.pendingIds.length) ? `
-          <div class="req-box">
-            <strong>À valider manuellement (${ev.pendingIds.length}) :</strong>
-            ${ev.pendingIds.map(pid => {
-              const u = getUser(pid);
-              return `
-                <div class="req-item">
-                  <div><strong>${u.name}</strong> • ${u.age} ans • ${u.gender}</div>
-                  <div class="meta">Vibe : ${u.vibe}</div>
-                  <div style="margin-top:6px;" class="row">
-                    <button type="button" onclick="reviewRequest('${ev.id}', '${u.id}', true)">Accepter</button>
-                    <button type="button" class="danger" onclick="reviewRequest('${ev.id}', '${u.id}', false)">Refuser</button>
-                  </div>
-                </div>
-              `;
-            }).join("")}
-          </div>
-        ` : "";
-
-        const formatLabel = ev.totalSpots === 2 ? "1v1 (2 max)" : `Groupe (${ev.totalSpots} max)`;
-        const accessLabel = ev.accessMode === "auto" ? "Validation auto" : "Validation manuelle";
-
-        let mainActionBtn = "";
-        if (isHost) {
-          mainActionBtn = `<button type="button" class="danger" onclick="askDeleteEvent('${ev.id}')">Supprimer la sortie</button>`;
-        } else if (joined) {
-          mainActionBtn = `<button type="button" class="danger" onclick="toggleJoin('${ev.id}')">Me désister</button>`;
-        } else if (pending) {
-          mainActionBtn = `<button type="button" class="filter-active" onclick="toggleJoin('${ev.id}')">En attente (annuler)</button>`;
-        } else {
-          mainActionBtn = `<button type="button" onclick="toggleJoin('${ev.id}')">Je suis chaud</button>`;
-        }
-
-        return `
-          <div class="card">
-            <div class="row">
-              <strong>${ev.title}</strong>
-              <span class="pill">${ev.mixity} • ${formatLabel}</span>
-            </div>
-            <div class="meta">Organisé par ${host.name} • ${accessLabel} • Places : ${ev.participants.length}/${ev.totalSpots} (${names})</div>
-            <div class="meta">${locationText}</div>
-            ${gearHtml}
-            ${hostRequestsHtml}
-            <div style="margin-top:10px;" class="row">
-              <div class="row">
-                ${mainActionBtn}
-                <button type="button" class="secondary" onclick="toggleSave('${ev.id}')">${saved ? "Enregistrée ✓" : "Enregistrer"}</button>
-              </div>
-            </div>
-            ${
-              isConfirmingDelete
-                ? `<div class="confirm-box">
-                     <div>Supprimer définitivement cette sortie ?</div>
-                     <div style="margin-top:8px;" class="row">
-                       <button type="button" class="danger-solid" onclick="confirmDeleteEvent('${ev.id}')">Oui, supprimer</button>
-                       <button type="button" class="secondary" onclick="cancelDeleteEvent()">Annuler</button>
-                     </div>
-                   </div>`
-                : ""
-            }
-          </div>
-        `;
-      }).join("");
+      if (!myEvents.length) {
+        mineContainer.innerHTML = `<div class="card"><div class="meta">Tu n'as pas encore créé de sortie. Passe sur « + Créer » pour lancer la tienne.</div></div>`;
+      } else {
+        mineContainer.innerHTML = myEvents.map(ev => renderEventCard(ev, me, true)).join("");
+      }
     }
 
     initSelects();
