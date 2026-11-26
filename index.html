@@ -168,7 +168,7 @@
 <body>
   <div class="app">
     <header>
-      <div class="brand">SORT <span style="font-size:11px;font-weight:600;opacity:0.7;">v0.7</span></div>
+      <div class="brand">SORT <span style="font-size:11px;font-weight:600;opacity:0.7;">v0.8</span></div>
       <span class="pill">100% gratuit • Sans swipe</span>
     </header>
 
@@ -296,11 +296,13 @@
       return users.find(u => u.id === id) || users[0];
     }
 
+    function isBlockedBetween(idA, idB) {
+      if (!idA || !idB || idA === idB) return false;
+      return blockedPairs.some(([a, b]) => (a === idA && b === idB) || (a === idB && b === idA));
+    }
+
     function isBlockedWithAnyParticipant(viewerId, participantIds) {
-      return participantIds.some(pid =>
-        pid !== viewerId &&
-        blockedPairs.some(([a, b]) => (a === viewerId && b === pid) || (a === pid && b === viewerId))
-      );
+      return participantIds.some(pid => pid !== viewerId && isBlockedBetween(viewerId, pid));
     }
 
     function isSaved(userId, eventId) {
@@ -471,6 +473,11 @@
         return;
       }
 
+      if (isBlockedWithAnyParticipant(me.id, ev.participants)) {
+        showMsg("Action impossible : blocage actif avec un participant de cette sortie.", true);
+        return;
+      }
+
       if (ev.participants.length >= ev.totalSpots) {
         showMsg("Complet : plus de place disponible.", true);
         return;
@@ -511,6 +518,12 @@
       if (!accept) {
         render();
         showMsg(`Demande de ${applicant.name} refusée.`);
+        return;
+      }
+
+      if (isBlockedWithAnyParticipant(applicantId, ev.participants)) {
+        render();
+        showMsg(`Impossible d'accepter ${applicant.name} : blocage actif avec un participant.`, true);
         return;
       }
 
