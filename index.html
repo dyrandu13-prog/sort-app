@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SORT — Prototype</title>
+  <title>SORT — V23</title>
   <style>
     :root {
       --bg: #f4f7f5;
@@ -12,13 +12,18 @@
       --muted: #5b6b64;
       --sage: #2f6f5e;
       --sage-soft: #e6f2ee;
-      --amber: #d97724;
+      --amber: #c96a1b;
       --amber-soft: #fff2e5;
       --danger: #b43b3b;
       --danger-soft: #fdecec;
       --border: #dce5e0;
     }
-    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
     body {
       margin: 0;
       background: var(--bg);
@@ -27,30 +32,58 @@
       justify-content: center;
       padding: 16px;
     }
+
     .app {
       width: 100%;
-      max-width: 440px;
+      max-width: 460px;
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 20px;
       padding: 18px;
       box-shadow: 0 10px 30px rgba(23, 33, 29, 0.06);
     }
+
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
       margin-bottom: 14px;
     }
-    .brand { font-size: 22px; font-weight: 800; color: var(--sage); letter-spacing: 0.5px; }
+
+    .brand {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--sage);
+      letter-spacing: 0.5px;
+    }
+
+    .version {
+      font-size: 11px;
+      font-weight: 700;
+      opacity: 0.75;
+    }
+
     .pill {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
-      padding: 4px 10px;
+      padding: 4px 9px;
       border-radius: 999px;
       background: var(--sage-soft);
       color: var(--sage);
+      white-space: nowrap;
     }
+
+    .pill.amber {
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .pill.danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
     .user-bar {
       display: flex;
       gap: 8px;
@@ -58,61 +91,96 @@
       background: var(--bg);
       padding: 10px;
       border-radius: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       font-size: 13px;
     }
-    select, input, textarea, button {
-      font-size: 14px;
+
+    select,
+    input,
+    textarea,
+    button {
+      font-size: 13.5px;
       border-radius: 10px;
       border: 1px solid var(--border);
-      padding: 9px 11px;
+      padding: 8px 10px;
     }
-    input, textarea, select { width: 100%; background: #fff; color: var(--ink); }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      background: #fff;
+      color: var(--ink);
+    }
+
     button {
       cursor: pointer;
       background: var(--sage);
       color: #fff;
       border: none;
       font-weight: 600;
+      transition: opacity 0.15s ease;
     }
+
+    button:hover {
+      opacity: 0.92;
+    }
+
     button.secondary {
       background: var(--sage-soft);
       color: var(--sage);
     }
+
     button.filter-active {
       background: var(--amber);
       color: #fff;
     }
+
     button.danger {
       background: var(--danger-soft);
       color: var(--danger);
     }
+
     button.danger-solid {
       background: var(--danger);
       color: #fff;
     }
+
+    button.small {
+      padding: 6px 9px;
+      font-size: 12px;
+    }
+
     .tabs {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 6px;
       margin-bottom: 10px;
     }
+
     .tabs button {
-      padding: 9px 6px;
-      font-size: 12.5px;
-      line-height: 1.25;
+      padding: 8px 5px;
+      font-size: 12px;
+      line-height: 1.2;
     }
-    .tabs button.inactive { background: var(--bg); color: var(--muted); }
+
+    .tabs button.inactive {
+      background: var(--bg);
+      color: var(--muted);
+    }
+
     .sub-bar {
       display: flex;
       gap: 8px;
       margin-bottom: 12px;
     }
+
     .sub-bar button {
       width: 100%;
       padding: 8px 10px;
-      font-size: 13px;
+      font-size: 12.5px;
     }
+
     .card {
       border: 1px solid var(--border);
       border-radius: 14px;
@@ -120,15 +188,38 @@
       margin-bottom: 12px;
       background: #fff;
     }
-    .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-    .meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .btns {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
     .gear-box {
       margin-top: 10px;
       padding: 9px 11px;
       border-radius: 10px;
       background: var(--amber-soft);
       font-size: 12.5px;
+      line-height: 1.4;
     }
+
     .req-box {
       margin-top: 10px;
       padding: 10px;
@@ -137,16 +228,29 @@
       border: 1px solid var(--border);
       font-size: 12.5px;
     }
+
     .req-item {
       padding-top: 8px;
       margin-top: 8px;
       border-top: 1px solid var(--border);
     }
+
     .req-item:first-child {
       padding-top: 0;
       margin-top: 0;
       border-top: none;
     }
+
+    .profile-detail {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #fff;
+      border: 1px dashed var(--border);
+      font-size: 12px;
+      color: var(--ink);
+    }
+
     .confirm-box {
       margin-top: 10px;
       padding: 10px;
@@ -155,6 +259,7 @@
       color: var(--danger);
       font-size: 12.5px;
     }
+
     .notice {
       padding: 10px 12px;
       border-radius: 10px;
@@ -162,49 +267,70 @@
       color: var(--sage);
       font-size: 13px;
       margin-bottom: 12px;
+      line-height: 1.35;
     }
-    .notice.err { background: var(--danger-soft); color: var(--danger); }
-    .field { margin-bottom: 10px; }
-    label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
-    .hidden { display: none; }
+
+    .notice.err {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .field {
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--muted);
+    }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <div class="app">
+  <div class="app" id="appRoot">
     <header>
-      <div class="brand">SORT <span style="font-size:11px;font-weight:600;opacity:0.7;">v0.9</span></div>
+      <div class="brand">SORT <span class="version">V23</span></div>
       <span class="pill">100% gratuit • Sans swipe</span>
     </header>
 
     <div class="user-bar">
-      <span style="white-space:nowrap; font-weight:600;">Moi :</span>
-      <select id="currentUser" onchange="onUserChange()"></select>
+      <label for="currentUser" style="margin:0; white-space:nowrap; color:var(--ink);">Moi :</label>
+      <select id="currentUser"></select>
     </div>
 
-    <div id="feedback" class="notice hidden"></div>
+    <div id="feedback" class="notice hidden" role="status" aria-live="polite"></div>
 
     <div class="tabs">
-      <button id="tabLocal" type="button" onclick="setTab('local')">Sorties locales</button>
-      <button id="tabMine" type="button" class="inactive" onclick="setTab('mine')">Sorties créées</button>
-      <button id="tabCreate" type="button" class="inactive" onclick="setTab('create')">+ Créer</button>
+      <button id="tabLocal" type="button" data-action="tab" data-tab="local">Locales</button>
+      <button id="tabMine" type="button" class="inactive" data-action="tab" data-tab="mine">Créées</button>
+      <button id="tabCreate" type="button" class="inactive" data-action="tab" data-tab="create">+ Créer</button>
+      <button id="tabPeople" type="button" class="inactive" data-action="tab" data-tab="people">Profils</button>
     </div>
 
     <div id="localSubBar" class="sub-bar">
-      <button id="btnSavedFilter" type="button" class="secondary" onclick="toggleSavedFilter()">Mes sorties enregistrées (0)</button>
+      <button id="btnSavedFilter" type="button" class="secondary" data-action="toggle-saved-filter">
+        Mes enregistrées (0)
+      </button>
     </div>
 
     <div id="viewLocal"></div>
     <div id="viewMine" class="hidden"></div>
 
     <div id="viewCreate" class="hidden">
-      <form id="createForm" class="card" onsubmit="handleCreateSubmit(event)">
+      <form id="createForm" class="card">
         <div class="field">
           <label for="evTitle">Titre de la sortie</label>
-          <input id="evTitle" placeholder="Ex. : Balade parc + Switch" />
+          <input id="evTitle" type="text" maxlength="80" placeholder="Ex. : Balade parc + Switch" />
         </div>
         <div class="field">
-          <label for="evSpots">Nombre de places au total (2 = 1v1, 3 à 6 = groupe)</label>
-          <select id="evSpots" onchange="syncMixityRules()">
+          <label for="evSpots">Format & places (2 = 1v1, 3 à 6 = groupe)</label>
+          <select id="evSpots">
             <option value="2">2 personnes (1v1 — mixte obligatoire)</option>
             <option value="3" selected>3 personnes (groupe)</option>
             <option value="4">4 personnes (groupe)</option>
@@ -212,163 +338,146 @@
           </select>
         </div>
         <div class="field">
-          <label for="evMixity">Public / Mixité</label>
+          <label for="evMixity">Mixité</label>
           <select id="evMixity"></select>
         </div>
         <div class="field">
           <label for="evAccess">Validation des participants</label>
           <select id="evAccess">
-            <option value="auto" selected>Validation automatique (entrée directe)</option>
+            <option value="auto" selected>Validation automatique</option>
             <option value="manual">Validation manuelle par le créateur</option>
           </select>
         </div>
         <div class="field">
           <label for="evZone">Zone approximative (publique)</label>
-          <input id="evZone" value="Centre-ville / Parc" />
+          <input id="evZone" type="text" maxlength="60" value="Centre-ville / Parc" />
         </div>
         <div class="field">
           <label for="evExact">Point de RDV précis (visible après validation)</label>
-          <input id="evExact" value="Entrée principale près de la fontaine" />
+          <input id="evExact" type="text" maxlength="90" value="Entrée principale près de la fontaine" />
         </div>
         <div class="field">
-          <label for="evHasGear">Matériel déjà prévu par l'organisateur (optionnel)</label>
-          <input id="evHasGear" placeholder="Ex. : 2 manettes, ballon, enceinte" />
+          <label for="evHasGear">Matériel déjà prévu (optionnel)</label>
+          <input id="evHasGear" type="text" maxlength="100" placeholder="Ex. : 2 manettes, ballon, enceinte" />
         </div>
         <div class="field">
-          <label for="evBringGear">Ce que les participants peuvent ramener (optionnel)</label>
-          <input id="evBringGear" placeholder="Ex. : eau, chips, jeu de cartes" />
+          <label for="evBringGear">À ramener par les participants (optionnel)</label>
+          <input id="evBringGear" type="text" maxlength="100" placeholder="Ex. : eau, chips, jeu de cartes" />
         </div>
         <button id="publishBtn" type="submit" style="width:100%;">Publier la sortie</button>
       </form>
     </div>
+
+    <div id="viewPeople" class="hidden"></div>
   </div>
 
   <script>
-    const users = [
-      { id: "u1", name: "Léa", age: 25, gender: "Femme", vibe: "Rando tranquille, café, ciné indé" },
-      { id: "u2", name: "Camille", age: 27, gender: "Femme", vibe: "Jeux de société, balades, apéro doux" },
-      { id: "u3", name: "Mehdi", age: 29, gender: "Homme", vibe: "Switch, foot détendu, bons restos" },
-      { id: "u4", name: "Lucas", age: 24, gender: "Homme", vibe: "Rétrogaming, brocantes, balade" }
-    ];
+    "use strict";
 
-    const blockedPairs = [
-      ["u1", "u3"]
-    ];
+    const state = {
+      currentUserId: "u1",
+      activeTab: "local",
+      onlySaved: false,
+      pendingDeleteId: null,
+      inspectedUserId: null,
+      feedback: { text: "", isErr: false },
+      users: [
+        { id: "u1", name: "Léa", age: 25, gender: "Femme", vibe: "Rando tranquille, café, ciné indé", verified: true },
+        { id: "u2", name: "Camille", age: 27, gender: "Femme", vibe: "Jeux de société, balades, apéro doux", verified: true },
+        { id: "u3", name: "Mehdi", age: 29, gender: "Homme", vibe: "Switch, foot détendu, bons restos", verified: false },
+        { id: "u4", name: "Lucas", age: 24, gender: "Homme", vibe: "Rétrogaming, brocantes, balade", verified: false }
+      ],
+      blockedPairs: [],
+      savedByUser: {},
+      events: [
+        {
+          id: "e1",
+          title: "Rando douce & café thermos",
+          hostId: "u1",
+          totalSpots: 4,
+          mixity: "Femmes",
+          accessMode: "manual",
+          zone: "Colline nord",
+          exactSpot: "Parking du belvédère",
+          hasGear: "Thermos café, carte du sentier",
+          bringGear: "Baskets, gourde, encas",
+          participants: ["u1"],
+          pendingIds: ["u2"]
+        },
+        {
+          id: "e2",
+          title: "Session Mario Kart & snacks",
+          hostId: "u4",
+          totalSpots: 3,
+          mixity: "Mixte",
+          accessMode: "auto",
+          zone: "Quartier gare",
+          exactSpot: "Café associatif Le Coin",
+          hasGear: "Console + 2 manettes",
+          bringGear: "Une manette en rab ou biscuits",
+          participants: ["u4"],
+          pendingIds: []
+        }
+      ]
+    };
 
-    let savedByUser = {};
-    let onlySaved = false;
-    let pendingDeleteId = null;
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&")
+        .replace(/</g, "<")
+        .replace(/>/g, ">")
+        .replace(/"/g, """)
+        .replace(/'/g, "'");
+    }
 
-    let events = [
-      {
-        id: "e1",
-        title: "Rando douce & café thermos",
-        hostId: "u1",
-        totalSpots: 4,
-        mixity: "Femmes",
-        accessMode: "manual",
-        zone: "Colline nord",
-        exactSpot: "Parking du belvédère",
-        hasGear: "Thermos café, carte du sentier",
-        bringGear: "Baskets, gourde, encas",
-        participants: ["u1"],
-        pendingIds: []
-      },
-      {
-        id: "e2",
-        title: "Session Mario Kart & snacks",
-        hostId: "u4",
-        totalSpots: 3,
-        mixity: "Mixte",
-        accessMode: "auto",
-        zone: "Quartier gare",
-        exactSpot: "Café associatif Le Coin",
-        hasGear: "Console + 2 manettes",
-        bringGear: "Une manette en rab ou biscuits",
-        participants: ["u4"],
-        pendingIds: []
-      }
-    ];
-
-    let activeTab = "local";
-
-    function initSelects() {
-      const sel = document.getElementById("currentUser");
-      sel.innerHTML = users.map(u => `<option value="${u.id}">${u.name} (${u.age}a • ${u.gender})</option>`).join("");
-      syncMixityRules();
+    function getMe() {
+      return state.users.find(u => u.id === state.currentUserId) || state.users[0];
     }
 
     function getUser(id) {
-      return users.find(u => u.id === id) || users[0];
+      return state.users.find(u => u.id === id) || null;
+    }
+
+    function setFeedback(text, isErr = false) {
+      state.feedback = { text, isErr };
+      renderFeedback();
+    }
+
+    function clearFeedback() {
+      state.feedback = { text: "", isErr: false };
+      renderFeedback();
+    }
+
+    function renderFeedback() {
+      const el = document.getElementById("feedback");
+      if (!state.feedback.text) {
+        el.textContent = "";
+        el.className = "notice hidden";
+        return;
+      }
+      el.textContent = state.feedback.text;
+      el.className = state.feedback.isErr ? "notice err" : "notice";
+      el.classList.remove("hidden");
     }
 
     function isBlockedBetween(idA, idB) {
       if (!idA || !idB || idA === idB) return false;
-      return blockedPairs.some(([a, b]) => (a === idA && b === idB) || (a === idB && b === idA));
+      return state.blockedPairs.some(
+        ([a, b]) => (a === idA && b === idB) || (a === idB && b === idA)
+      );
     }
 
     function isBlockedWithAnyParticipant(viewerId, participantIds) {
-      return participantIds.some(pid => pid !== viewerId && isBlockedBetween(viewerId, pid));
+      return (participantIds || []).some(pid => pid !== viewerId && isBlockedBetween(viewerId, pid));
     }
 
     function isSaved(userId, eventId) {
-      return Array.isArray(savedByUser[userId]) && savedByUser[userId].includes(eventId);
-    }
-
-    function toggleSavedFilter() {
-      onlySaved = !onlySaved;
-      render();
-    }
-
-    function toggleSave(eventId) {
-      const me = getUser(document.getElementById("currentUser").value);
-      const list = savedByUser[me.id] || [];
-      if (list.includes(eventId)) {
-        savedByUser[me.id] = list.filter(id => id !== eventId);
-        render();
-        showMsg(`Sortie retirée des enregistrées pour ${me.name}.`);
-      } else {
-        savedByUser[me.id] = [...list, eventId];
-        render();
-        showMsg(`Sortie enregistrée uniquement pour ${me.name}.`);
-      }
-    }
-
-    function askDeleteEvent(eventId) {
-      pendingDeleteId = eventId;
-      render();
-    }
-
-    function cancelDeleteEvent() {
-      pendingDeleteId = null;
-      render();
-    }
-
-    function confirmDeleteEvent(eventId) {
-      const me = getUser(document.getElementById("currentUser").value);
-      const idx = events.findIndex(x => String(x.id) === String(eventId));
-      if (idx === -1) {
-        showMsg("Sortie introuvable.", true);
-        return;
-      }
-      const ev = events[idx];
-      if (String(ev.hostId) !== String(me.id)) {
-        showMsg("Seul le créateur peut supprimer cette sortie.", true);
-        return;
-      }
-      const deletedTitle = ev.title;
-      events.splice(idx, 1);
-      pendingDeleteId = null;
-      Object.keys(savedByUser).forEach(uid => {
-        savedByUser[uid] = (savedByUser[uid] || []).filter(id => String(id) !== String(eventId));
-      });
-      render();
-      showMsg(`Sortie "${deletedTitle}" supprimée.`);
+      return Array.isArray(state.savedByUser[userId]) && state.savedByUser[userId].includes(eventId);
     }
 
     function syncMixityRules() {
       const spots = Number(document.getElementById("evSpots").value);
-      const me = getUser(document.getElementById("currentUser").value);
+      const me = getMe();
       const mixSel = document.getElementById("evMixity");
 
       if (spots === 2) {
@@ -376,171 +485,163 @@
         mixSel.disabled = true;
       } else {
         mixSel.disabled = false;
-        const sameGenderLabel = me.gender === "Femme" ? "Femmes" : "Hommes";
+        const sameLabel = me.gender === "Femme" ? "Femmes" : "Hommes";
         mixSel.innerHTML = `
           <option value="Mixte">Mixte (ouvert à tous)</option>
-          <option value="${sameGenderLabel}">Entre ${sameGenderLabel.toLowerCase()} (même genre que l'organisateur)</option>
+          <option value="${escapeHtml(sameLabel)}">Entre ${escapeHtml(sameLabel.toLowerCase())} (genre de l'organisateur)</option>
         `;
       }
     }
 
-    function hideMsg() {
-      const el = document.getElementById("feedback");
-      el.textContent = "";
-      el.className = "notice hidden";
+    function populateUserSelect() {
+      const sel = document.getElementById("currentUser");
+      sel.innerHTML = state.users
+        .map(u => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} (${escapeHtml(u.age)}a • ${escapeHtml(u.gender)})</option>`)
+        .join("");
+      sel.value = state.currentUserId;
     }
 
-    function showMsg(text, isErr = false) {
-      const el = document.getElementById("feedback");
-      el.textContent = text;
-      el.className = isErr ? "notice err" : "notice";
-      el.classList.remove("hidden");
-    }
-
-    function onUserChange() {
-      pendingDeleteId = null;
-      onlySaved = false;
-      hideMsg();
+    function switchUser(newUserId) {
+      if (!getUser(newUserId)) return;
+      state.currentUserId = newUserId;
+      state.pendingDeleteId = null;
+      state.inspectedUserId = null;
+      state.onlySaved = false;
+      clearFeedback();
       syncMixityRules();
       render();
     }
 
-    function setTab(tab) {
-      activeTab = tab;
-      pendingDeleteId = null;
-      document.getElementById("viewLocal").classList.toggle("hidden", tab !== "local");
-      document.getElementById("viewMine").classList.toggle("hidden", tab !== "mine");
-      document.getElementById("viewCreate").classList.toggle("hidden", tab !== "create");
-      document.getElementById("localSubBar").classList.toggle("hidden", tab !== "local");
-
-      document.getElementById("tabLocal").className = tab === "local" ? "" : "inactive";
-      document.getElementById("tabMine").className = tab === "mine" ? "" : "inactive";
-      document.getElementById("tabCreate").className = tab === "create" ? "" : "inactive";
-
-      if (tab === "create") syncMixityRules();
+    function switchTab(tab) {
+      const validTabs = ["local", "mine", "create", "people"];
+      if (!validTabs.includes(tab)) return;
+      state.activeTab = tab;
+      state.pendingDeleteId = null;
+      clearFeedback();
+      if (tab === "create") {
+        syncMixityRules();
+      }
       render();
     }
 
     function handleCreateSubmit(e) {
       e.preventDefault();
-      try {
-        const me = getUser(document.getElementById("currentUser").value);
-        const titleInput = document.getElementById("evTitle").value.trim();
-        const title = titleInput || "Sortie amicale";
-        const totalSpots = Number(document.getElementById("evSpots").value) || 3;
-        const mixity = totalSpots === 2 ? "Mixte" : (document.getElementById("evMixity").value || "Mixte");
-        const accessMode = document.getElementById("evAccess").value || "auto";
-        const zone = document.getElementById("evZone").value.trim() || "À proximité";
-        const exactSpot = document.getElementById("evExact").value.trim() || "Point de RDV confirmé aux inscrits";
-        const hasGear = document.getElementById("evHasGear").value.trim();
-        const bringGear = document.getElementById("evBringGear").value.trim();
+      const me = getMe();
+      const rawTitle = document.getElementById("evTitle").value.trim();
+      const title = rawTitle || "Sortie amicale";
+      const totalSpots = Number(document.getElementById("evSpots").value) || 3;
+      const mixity = totalSpots === 2
+        ? "Mixte"
+        : (document.getElementById("evMixity").value || "Mixte");
+      const accessMode = document.getElementById("evAccess").value === "manual" ? "manual" : "auto";
+      const zone = document.getElementById("evZone").value.trim() || "À proximité";
+      const exactSpot = document.getElementById("evExact").value.trim() || "Point de RDV confirmé aux inscrits";
+      const hasGear = document.getElementById("evHasGear").value.trim();
+      const bringGear = document.getElementById("evBringGear").value.trim();
 
-        events.unshift({
-          id: "e_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
-          title,
-          hostId: me.id,
-          totalSpots,
-          mixity,
-          accessMode,
-          zone,
-          exactSpot,
-          hasGear,
-          bringGear,
-          participants: [me.id],
-          pendingIds: []
-        });
+      const newEvent = {
+        id: "e_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        title,
+        hostId: me.id,
+        totalSpots,
+        mixity,
+        accessMode,
+        zone,
+        exactSpot,
+        hasGear,
+        bringGear,
+        participants: [me.id],
+        pendingIds: []
+      };
 
-        document.getElementById("evTitle").value = "";
-        document.getElementById("evHasGear").value = "";
-        document.getElementById("evBringGear").value = "";
-        setTab("mine");
-        showMsg(`Sortie "${title}" publiée dans tes sorties créées.`);
-      } catch (err) {
-        showMsg("Erreur lors de la publication : " + err.message, true);
-      }
+      state.events.unshift(newEvent);
+      document.getElementById("evTitle").value = "";
+      document.getElementById("evHasGear").value = "";
+      document.getElementById("evBringGear").value = "";
+
+      state.activeTab = "mine";
+      render();
+      setFeedback(`Sortie « ${title} » publiée dans tes sorties créées.`);
     }
 
-    function toggleJoin(eventId) {
-      const me = getUser(document.getElementById("currentUser").value);
-      const ev = events.find(x => String(x.id) === String(eventId));
+    function handleToggleJoin(eventId) {
+      const me = getMe();
+      const ev = state.events.find(x => x.id === eventId);
       if (!ev) return;
 
-      if (String(ev.hostId) === String(me.id)) {
-        showMsg("Gère ta sortie depuis l'onglet « Sorties créées ».", true);
+      if (ev.hostId === me.id) {
+        setFeedback("Gère ta sortie depuis l'onglet « Créées ».", true);
         return;
       }
 
       if (ev.participants.includes(me.id)) {
         ev.participants = ev.participants.filter(id => id !== me.id);
         render();
-        showMsg("Tu t'es désisté : la place s'est libérée.");
+        setFeedback("Désistement validé.");
         return;
       }
 
       if (ev.pendingIds.includes(me.id)) {
         ev.pendingIds = ev.pendingIds.filter(id => id !== me.id);
         render();
-        showMsg("Ta demande de participation a été annulée.");
+        setFeedback("Demande de participation annulée.");
         return;
       }
 
       if (isBlockedWithAnyParticipant(me.id, ev.participants)) {
-        showMsg("Action impossible : blocage actif avec un participant de cette sortie.", true);
+        setFeedback("Impossible : blocage actif avec un participant de cette sortie.", true);
         return;
       }
 
       if (ev.participants.length >= ev.totalSpots) {
-        showMsg("Complet : plus de place disponible.", true);
+        setFeedback("Complet : plus de place disponible.", true);
         return;
       }
 
       if (ev.mixity === "Femmes" && me.gender !== "Femme") {
-        showMsg("Sortie réservée aux femmes.", true);
+        setFeedback("Sortie réservée aux femmes.", true);
         return;
       }
+
       if (ev.mixity === "Hommes" && me.gender !== "Homme") {
-        showMsg("Sortie réservée aux hommes.", true);
+        setFeedback("Sortie réservée aux hommes.", true);
         return;
       }
 
       if (ev.accessMode === "auto") {
         ev.participants.push(me.id);
         render();
-        showMsg("Validation automatique réussie ! Point de RDV précis débloqué.");
+        setFeedback("Inscription validée ! Point de RDV précis débloqué.");
       } else {
         ev.pendingIds.push(me.id);
         render();
-        showMsg("Demande envoyée au créateur pour validation manuelle.");
+        setFeedback("Demande envoyée au créateur pour validation manuelle.");
       }
     }
 
-    function reviewRequest(eventId, applicantId, accept) {
-      const me = getUser(document.getElementById("currentUser").value);
-      const ev = events.find(x => String(x.id) === String(eventId));
-      if (!ev) return;
-      if (String(ev.hostId) !== String(me.id)) {
-        showMsg("Seul le créateur peut valider ou refuser.", true);
-        return;
-      }
+    function handleReview(eventId, applicantId, accept) {
+      const me = getMe();
+      const ev = state.events.find(x => x.id === eventId);
+      const applicant = getUser(applicantId);
+      if (!ev || !applicant || ev.hostId !== me.id) return;
 
       ev.pendingIds = ev.pendingIds.filter(id => id !== applicantId);
-      const applicant = getUser(applicantId);
 
       if (!accept) {
         render();
-        showMsg(`Demande de ${applicant.name} refusée.`);
+        setFeedback(`Demande de ${applicant.name} refusée.`);
         return;
       }
 
       if (isBlockedWithAnyParticipant(applicantId, ev.participants)) {
         render();
-        showMsg(`Impossible d'accepter ${applicant.name} : blocage actif avec un participant.`, true);
+        setFeedback(`Impossible d'accepter ${applicant.name} : blocage actif avec un participant.`, true);
         return;
       }
 
       if (ev.participants.length >= ev.totalSpots) {
         render();
-        showMsg("Impossible d'accepter : la sortie est complète.", true);
+        setFeedback("Impossible d'accepter : la sortie est complète.", true);
         return;
       }
 
@@ -548,135 +649,354 @@
         ev.participants.push(applicantId);
       }
       render();
-      showMsg(`${applicant.name} a été accepté(e) sur la sortie.`);
+      setFeedback(`${applicant.name} a été accepté(e) sur la sortie.`);
     }
 
-    function renderEventCard(ev, me, isManagementView) {
-      const host = getUser(ev.hostId);
-      const isHost = String(ev.hostId) === String(me.id);
-      const joined = ev.participants.includes(me.id);
-      const pending = ev.pendingIds.includes(me.id);
-      const saved = isSaved(me.id, ev.id);
-      const isConfirmingDelete = isHost && String(pendingDeleteId) === String(ev.id);
-      const names = ev.participants.map(id => getUser(id).name).join(", ");
-      const locationText = (joined || isManagementView)
-        ? `<strong>RDV précis :</strong> ${ev.exactSpot} (${ev.zone})`
-        : `<strong>Zone :</strong> ${ev.zone} <em>(RDV exact après validation)</em>`;
+    function handleToggleSave(eventId) {
+      const me = getMe();
+      const ev = state.events.find(x => x.id === eventId);
+      if (!ev) return;
 
-      const gearHtml = (ev.hasGear || ev.bringGear) ? `
-        <div class="gear-box">
-          ${ev.hasGear ? `<div><strong>Déjà prévu :</strong> ${ev.hasGear}</div>` : ""}
-          ${ev.bringGear ? `<div><strong>À ramener :</strong> ${ev.bringGear}</div>` : ""}
-        </div>
-      ` : "";
-
-      const hostRequestsHtml = (isManagementView && ev.accessMode === "manual" && ev.pendingIds.length) ? `
-        <div class="req-box">
-          <strong>À valider manuellement (${ev.pendingIds.length}) :</strong>
-          ${ev.pendingIds.map(pid => {
-            const u = getUser(pid);
-            return `
-              <div class="req-item">
-                <div><strong>${u.name}</strong> • ${u.age} ans • ${u.gender}</div>
-                <div class="meta">Vibe : ${u.vibe}</div>
-                <div style="margin-top:6px;" class="row">
-                  <button type="button" onclick="reviewRequest('${ev.id}', '${u.id}', true)">Accepter</button>
-                  <button type="button" class="danger" onclick="reviewRequest('${ev.id}', '${u.id}', false)">Refuser</button>
-                </div>
-              </div>
-            `;
-          }).join("")}
-        </div>
-      ` : "";
-
-      const formatLabel = ev.totalSpots === 2 ? "1v1 (2 max)" : `Groupe (${ev.totalSpots} max)`;
-      const accessLabel = ev.accessMode === "auto" ? "Validation auto" : "Validation manuelle";
-
-      let leftBtns = "";
-      if (isManagementView) {
-        leftBtns = `<button type="button" class="danger" onclick="askDeleteEvent('${ev.id}')">Supprimer la sortie</button>`;
-      } else if (joined) {
-        leftBtns = `<button type="button" class="danger" onclick="toggleJoin('${ev.id}')">Me désister</button>`;
-      } else if (pending) {
-        leftBtns = `<button type="button" class="filter-active" onclick="toggleJoin('${ev.id}')">En attente (annuler)</button>`;
+      const list = state.savedByUser[me.id] || [];
+      if (list.includes(eventId)) {
+        state.savedByUser[me.id] = list.filter(id => id !== eventId);
+        render();
+        setFeedback(`Sortie retirée des enregistrées (${me.name}).`);
       } else {
-        leftBtns = `<button type="button" onclick="toggleJoin('${ev.id}')">Je suis chaud</button>`;
+        state.savedByUser[me.id] = [...list, eventId];
+        render();
+        setFeedback(`Sortie enregistrée uniquement pour ${me.name}.`);
       }
+    }
+
+    function handleToggleVerify(targetId) {
+      const target = getUser(targetId);
+      if (!target) return;
+      target.verified = !target.verified;
+      render();
+      setFeedback(
+        target.verified
+          ? `Profil de ${target.name} marqué comme vérifié.`
+          : `Vérification retirée pour ${target.name}.`
+      );
+    }
+
+    function handleToggleBlock(targetId) {
+      const me = getMe();
+      const target = getUser(targetId);
+      if (!target || target.id === me.id) return;
+
+      if (isBlockedBetween(me.id, target.id)) {
+        state.blockedPairs = state.blockedPairs.filter(
+          ([a, b]) => !((a === me.id && b === target.id) || (a === target.id && b === me.id))
+        );
+        render();
+        setFeedback(`${target.name} n'est plus bloqué(e).`);
+      } else {
+        state.blockedPairs.push([me.id, target.id]);
+        state.events.forEach(ev => {
+          ev.participants = ev.participants.filter(pid => pid !== target.id);
+          ev.pendingIds = ev.pendingIds.filter(pid => pid !== target.id);
+        });
+        if (state.inspectedUserId === target.id) {
+          state.inspectedUserId = null;
+        }
+        render();
+        setFeedback(`${target.name} est bloqué(e) (blocage mutuel actif).`);
+      }
+    }
+
+    function handleConfirmDelete(eventId) {
+      const me = getMe();
+      const idx = state.events.findIndex(x => x.id === eventId);
+      if (idx === -1) return;
+      const ev = state.events[idx];
+      if (ev.hostId !== me.id) {
+        setFeedback("Seul le créateur peut supprimer cette sortie.", true);
+        return;
+      }
+
+      const deletedTitle = ev.title;
+      state.events.splice(idx, 1);
+      state.pendingDeleteId = null;
+      Object.keys(state.savedByUser).forEach(uid => {
+        state.savedByUser[uid] = (state.savedByUser[uid] || []).filter(id => id !== eventId);
+      });
+      render();
+      setFeedback(`Sortie « ${deletedTitle} » supprimée.`);
+    }
+
+    function renderProfileCard(u, me) {
+      const isMe = u.id === me.id;
+      const blocked = isBlockedBetween(me.id, u.id);
+      const badgeClass = u.verified ? "pill" : "pill amber";
+      const badgeText = u.verified ? "Vérifié ✓" : "Non vérifié";
 
       return `
         <div class="card">
           <div class="row">
-            <strong>${ev.title}</strong>
-            <span class="pill">${ev.mixity} • ${formatLabel}</span>
-          </div>
-          <div class="meta">Organisé par ${host.name} • ${accessLabel} • Places : ${ev.participants.length}/${ev.totalSpots} (${names})</div>
-          <div class="meta">${locationText}</div>
-          ${gearHtml}
-          ${hostRequestsHtml}
-          <div style="margin-top:10px;" class="row">
-            <div class="row">
-              ${leftBtns}
-              <button type="button" class="secondary" onclick="toggleSave('${ev.id}')">${saved ? "Enregistrée ✓" : "Enregistrer"}</button>
+            <div class="btns">
+              <strong>${escapeHtml(u.name)}</strong>
+              <span class="meta" style="margin:0;">${escapeHtml(u.age)} ans • ${escapeHtml(u.gender)}</span>
+              <span class="${badgeClass}">${badgeText}</span>
             </div>
+            ${blocked ? `<span class="pill danger">Bloqué</span>` : ""}
           </div>
+          <div class="meta">Vibe : ${escapeHtml(u.vibe)}</div>
+          <div style="margin-top:8px;" class="btns">
+            <button type="button" class="secondary small" data-action="toggle-verify" data-user-id="${escapeHtml(u.id)}">
+              ${u.verified ? "Retirer vérif" : "Vérifier profil"}
+            </button>
+            ${
+              !isMe
+                ? `<button type="button" class="${blocked ? "secondary" : "danger"} small" data-action="toggle-block" data-user-id="${escapeHtml(u.id)}">
+                     ${blocked ? "Ne plus bloquer" : "Bloquer"}
+                   </button>`
+                : ""
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    function renderEventCard(ev, me, isManagementView) {
+      const host = getUser(ev.hostId) || { id: "", name: "Membre", verified: false };
+      const isHost = ev.hostId === me.id;
+      const joined = ev.participants.includes(me.id);
+      const pending = ev.pendingIds.includes(me.id);
+      const saved = isSaved(me.id, ev.id);
+      const isConfirmingDelete = isHost && state.pendingDeleteId === ev.id;
+      const hostBlocked = !isHost && isBlockedBetween(me.id, host.id);
+
+      const names = ev.participants
+        .map(id => (getUser(id) ? getUser(id).name : "Membre"))
+        .join(", ");
+
+      const locationText = (joined || isManagementView)
+        ? `<strong>RDV précis :</strong> ${escapeHtml(ev.exactSpot)} (${escapeHtml(ev.zone)})`
+        : `<strong>Zone :</strong> ${escapeHtml(ev.zone)} <em>(RDV exact après validation)</em>`;
+
+      const gearHtml = (ev.hasGear || ev.bringGear)
+        ? `<div class="gear-box">
+             ${ev.hasGear ? `<div><strong>Déjà prévu :</strong> ${escapeHtml(ev.hasGear)}</div>` : ""}
+             ${ev.bringGear ? `<div><strong>À ramener :</strong> ${escapeHtml(ev.bringGear)}</div>` : ""}
+           </div>`
+        : "";
+
+      const requestsHtml = (isManagementView && ev.accessMode === "manual" && ev.pendingIds.length > 0)
+        ? `<div class="req-box">
+             <strong>Demandes à valider (${ev.pendingIds.length}) :</strong>
+             ${ev.pendingIds.map(pid => {
+               const u = getUser(pid);
+               if (!u) return "";
+               const uBlocked = isBlockedBetween(me.id, u.id);
+               const detailOpen = state.inspectedUserId === u.id;
+               return `
+                 <div class="req-item">
+                   <div class="btns">
+                     <strong>${escapeHtml(u.name)}</strong>
+                     <span class="meta" style="margin:0;">${escapeHtml(u.age)}a • ${escapeHtml(u.gender)}</span>
+                     <span class="pill ${u.verified ? "" : "amber"}">${u.verified ? "Vérifié ✓" : "Non vérifié"}</span>
+                   </div>
+                   <div class="meta">Vibe : ${escapeHtml(u.vibe)}</div>
+                   <div style="margin-top:6px;" class="btns">
+                     <button type="button" class="small" data-action="review" data-event-id="${escapeHtml(ev.id)}" data-user-id="${escapeHtml(u.id)}" data-decision="accept">Accepter</button>
+                     <button type="button" class="danger small" data-action="review" data-event-id="${escapeHtml(ev.id)}" data-user-id="${escapeHtml(u.id)}" data-decision="refuse">Refuser</button>
+                     <button type="button" class="secondary small" data-action="inspect" data-user-id="${escapeHtml(u.id)}">${detailOpen ? "Fermer profil" : "Vérifier profil"}</button>
+                     <button type="button" class="${uBlocked ? "secondary" : "danger"} small" data-action="toggle-block" data-user-id="${escapeHtml(u.id)}">
+                       ${uBlocked ? "Ne plus bloquer" : "Bloquer"}
+                     </button>
+                   </div>
+                   ${
+                     detailOpen
+                       ? `<div class="profile-detail">
+                            <div><strong>Profil de ${escapeHtml(u.name)} :</strong> ${escapeHtml(u.age)} ans, ${escapeHtml(u.gender)}</div>
+                            <div class="meta">Vibe : ${escapeHtml(u.vibe)}</div>
+                            <div style="margin-top:6px;" class="btns">
+                              <span class="pill ${u.verified ? "" : "amber"}">${u.verified ? "Vérifié ✓" : "Non vérifié"}</span>
+                              <button type="button" class="secondary small" data-action="toggle-verify" data-user-id="${escapeHtml(u.id)}">
+                                ${u.verified ? "Retirer vérif" : "Valider vérif"}
+                              </button>
+                            </div>
+                          </div>`
+                       : ""
+                   }
+                 </div>
+               `;
+             }).join("")}
+           </div>`
+        : "";
+
+      const formatLabel = ev.totalSpots === 2 ? "1v1 (2 max)" : `Groupe (${ev.totalSpots} max)`;
+      const accessLabel = ev.accessMode === "auto" ? "Auto" : "Manuel";
+
+      let primaryBtnHtml = "";
+      if (isManagementView) {
+        primaryBtnHtml = `
+          <button type="button" class="danger small" data-action="ask-delete" data-event-id="${escapeHtml(ev.id)}">Supprimer</button>
           ${
             isConfirmingDelete
-              ? `<div class="confirm-box">
-                   <div>Supprimer définitivement cette sortie ?</div>
-                   <div style="margin-top:8px;" class="row">
-                     <button type="button" class="danger-solid" onclick="confirmDeleteEvent('${ev.id}')">Oui, supprimer</button>
-                     <button type="button" class="secondary" onclick="cancelDeleteEvent()">Annuler</button>
-                   </div>
-                 </div>`
+              ? `<button type="button" class="secondary small" data-action="cancel-delete">Ne pas supprimer</button>`
               : ""
           }
+        `;
+      } else if (joined) {
+        primaryBtnHtml = `<button type="button" class="danger small" data-action="toggle-join" data-event-id="${escapeHtml(ev.id)}">Me désister</button>`;
+      } else if (pending) {
+        primaryBtnHtml = `<button type="button" class="filter-active small" data-action="toggle-join" data-event-id="${escapeHtml(ev.id)}">En attente (annuler)</button>`;
+      } else {
+        primaryBtnHtml = `<button type="button" class="small" data-action="toggle-join" data-event-id="${escapeHtml(ev.id)}">Je suis chaud</button>`;
+      }
+
+      const confirmBoxHtml = isConfirmingDelete
+        ? `<div class="confirm-box">
+             <div>Confirmer la suppression définitive de « ${escapeHtml(ev.title)} » ?</div>
+             <div style="margin-top:8px;" class="btns">
+               <button type="button" class="danger-solid small" data-action="confirm-delete" data-event-id="${escapeHtml(ev.id)}">Supprimer</button>
+               <button type="button" class="secondary small" data-action="cancel-delete">Ne pas supprimer</button>
+             </div>
+           </div>`
+        : "";
+
+      return `
+        <div class="card">
+          <div class="row">
+            <strong>${escapeHtml(ev.title)}</strong>
+            <span class="pill">${escapeHtml(ev.mixity)} • ${escapeHtml(formatLabel)}</span>
+          </div>
+          <div class="meta">
+            Organisé par <strong>${escapeHtml(host.name)}</strong> (${host.verified ? "Vérifié ✓" : "Non vérifié"}) • ${escapeHtml(accessLabel)} • Places : ${ev.participants.length}/${ev.totalSpots} (${escapeHtml(names)})
+          </div>
+          <div class="meta">${locationText}</div>
+          ${gearHtml}
+          ${requestsHtml}
+          <div style="margin-top:10px;" class="btns">
+            ${primaryBtnHtml}
+            <button type="button" class="secondary small" data-action="toggle-save" data-event-id="${escapeHtml(ev.id)}">
+              ${saved ? "Enregistrée ✓" : "Enregistrer"}
+            </button>
+            ${
+              !isHost && host.id
+                ? `<button type="button" class="${hostBlocked ? "secondary" : "danger"} small" data-action="toggle-block" data-user-id="${escapeHtml(host.id)}">
+                     ${hostBlocked ? "Ne plus bloquer" : "Bloquer"}
+                   </button>`
+                : ""
+            }
+          </div>
+          ${confirmBoxHtml}
         </div>
       `;
     }
 
     function render() {
-      const me = getUser(document.getElementById("currentUser").value);
-      const localContainer = document.getElementById("viewLocal");
-      const mineContainer = document.getElementById("viewMine");
+      const me = getMe();
+      const tab = state.activeTab;
 
-      const myEvents = events.filter(ev => String(ev.hostId) === String(me.id));
-      const pendingTotal = myEvents.reduce((acc, ev) => acc + (ev.accessMode === "manual" ? ev.pendingIds.length : 0), 0);
-      document.getElementById("tabMine").textContent = pendingTotal > 0
-        ? `Sorties créées (${pendingTotal})`
-        : "Sorties créées";
+      document.getElementById("viewLocal").classList.toggle("hidden", tab !== "local");
+      document.getElementById("viewMine").classList.toggle("hidden", tab !== "mine");
+      document.getElementById("viewCreate").classList.toggle("hidden", tab !== "create");
+      document.getElementById("viewPeople").classList.toggle("hidden", tab !== "people");
+      document.getElementById("localSubBar").classList.toggle("hidden", tab !== "local");
 
-      const localPool = events.filter(ev =>
-        String(ev.hostId) !== String(me.id) &&
-        !isBlockedWithAnyParticipant(me.id, ev.participants)
+      document.getElementById("tabLocal").className = tab === "local" ? "" : "inactive";
+      document.getElementById("tabMine").className = tab === "mine" ? "" : "inactive";
+      document.getElementById("tabCreate").className = tab === "create" ? "" : "inactive";
+      document.getElementById("tabPeople").className = tab === "people" ? "" : "inactive";
+
+      const myEvents = state.events.filter(ev => ev.hostId === me.id);
+      const pendingTotal = myEvents.reduce(
+        (sum, ev) => sum + (ev.accessMode === "manual" ? ev.pendingIds.length : 0),
+        0
+      );
+      document.getElementById("tabMine").textContent = pendingTotal > 0 ? `Créées (${pendingTotal})` : "Créées";
+
+      const localPool = state.events.filter(
+        ev => ev.hostId !== me.id && !isBlockedWithAnyParticipant(me.id, ev.participants)
       );
       const savedCount = localPool.filter(ev => isSaved(me.id, ev.id)).length;
 
-      const filterBtn = document.getElementById("btnSavedFilter");
-      filterBtn.textContent = onlySaved
-        ? `Afficher toutes les sorties locales (${localPool.length})`
-        : `Mes sorties enregistrées (${savedCount})`;
-      filterBtn.className = onlySaved ? "filter-active" : "secondary";
+      const savedFilterBtn = document.getElementById("btnSavedFilter");
+      savedFilterBtn.textContent = state.onlySaved
+        ? `Toutes les sorties locales (${localPool.length})`
+        : `Mes enregistrées (${savedCount})`;
+      savedFilterBtn.className = state.onlySaved ? "filter-active" : "secondary";
 
-      const visibleLocal = onlySaved
+      const visibleLocal = state.onlySaved
         ? localPool.filter(ev => isSaved(me.id, ev.id))
         : localPool;
 
-      if (!visibleLocal.length) {
-        localContainer.innerHTML = `<div class="card"><div class="meta">${
-          onlySaved ? "Aucune sortie locale enregistrée pour ce profil." : "Aucune sortie locale disponible ici pour le moment."
-        }</div></div>`;
-      } else {
-        localContainer.innerHTML = visibleLocal.map(ev => renderEventCard(ev, me, false)).join("");
-      }
+      document.getElementById("viewLocal").innerHTML = visibleLocal.length > 0
+        ? visibleLocal.map(ev => renderEventCard(ev, me, false)).join("")
+        : `<div class="card"><div class="meta">${
+            state.onlySaved
+              ? "Aucune sortie locale enregistrée pour ce profil."
+              : "Aucune sortie locale visible pour le moment."
+          }</div></div>`;
 
-      if (!myEvents.length) {
-        mineContainer.innerHTML = `<div class="card"><div class="meta">Tu n'as pas encore créé de sortie. Passe sur « + Créer » pour lancer la tienne.</div></div>`;
-      } else {
-        mineContainer.innerHTML = myEvents.map(ev => renderEventCard(ev, me, true)).join("");
-      }
+      document.getElementById("viewMine").innerHTML = myEvents.length > 0
+        ? myEvents.map(ev => renderEventCard(ev, me, true)).join("")
+        : `<div class="card"><div class="meta">Tu n'as pas encore créé de sortie. Utilise l'onglet « + Créer ».</div></div>`;
+
+      document.getElementById("viewPeople").innerHTML = state.users
+        .map(u => renderProfileCard(u, me))
+        .join("");
+
+      renderFeedback();
     }
 
-    initSelects();
+    function bindEvents() {
+      document.getElementById("currentUser").addEventListener("change", e => {
+        switchUser(e.target.value);
+      });
+
+      document.getElementById("evSpots").addEventListener("change", () => {
+        syncMixityRules();
+      });
+
+      document.getElementById("createForm").addEventListener("submit", handleCreateSubmit);
+
+      document.getElementById("appRoot").addEventListener("click", e => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const eventId = btn.dataset.eventId || "";
+        const userId = btn.dataset.userId || "";
+
+        if (action === "tab") {
+          switchTab(btn.dataset.tab);
+        } else if (action === "toggle-saved-filter") {
+          state.onlySaved = !state.onlySaved;
+          render();
+        } else if (action === "toggle-join") {
+          handleToggleJoin(eventId);
+        } else if (action === "toggle-save") {
+          handleToggleSave(eventId);
+        } else if (action === "ask-delete") {
+          state.pendingDeleteId = eventId;
+          render();
+        } else if (action === "cancel-delete") {
+          state.pendingDeleteId = null;
+          render();
+          setFeedback("Suppression annulée.");
+        } else if (action === "confirm-delete") {
+          handleConfirmDelete(eventId);
+        } else if (action === "review") {
+          handleReview(eventId, userId, btn.dataset.decision === "accept");
+        } else if (action === "inspect") {
+          state.inspectedUserId = state.inspectedUserId === userId ? null : userId;
+          render();
+        } else if (action === "toggle-verify") {
+          handleToggleVerify(userId);
+        } else if (action === "toggle-block") {
+          handleToggleBlock(userId);
+        }
+      });
+    }
+
+    populateUserSelect();
+    syncMixityRules();
+    bindEvents();
     render();
   </script>
 </body>
