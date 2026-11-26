@@ -125,6 +125,24 @@
       background: var(--amber-soft);
       font-size: 12.5px;
     }
+    .req-box {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 12.5px;
+    }
+    .req-item {
+      padding-top: 8px;
+      margin-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .req-item:first-child {
+      padding-top: 0;
+      margin-top: 0;
+      border-top: none;
+    }
     .confirm-box {
       margin-top: 10px;
       padding: 10px;
@@ -150,7 +168,7 @@
 <body>
   <div class="app">
     <header>
-      <div class="brand">SORT <span style="font-size:11px;font-weight:600;opacity:0.7;">v0.5</span></div>
+      <div class="brand">SORT <span style="font-size:11px;font-weight:600;opacity:0.7;">v0.7</span></div>
       <span class="pill">100% gratuit • Sans swipe</span>
     </header>
 
@@ -192,6 +210,13 @@
           <select id="evMixity"></select>
         </div>
         <div class="field">
+          <label for="evAccess">Validation des participants</label>
+          <select id="evAccess">
+            <option value="auto" selected>Validation automatique (entrée directe)</option>
+            <option value="manual">Validation manuelle par le créateur</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="evZone">Zone approximative (publique)</label>
           <input id="evZone" value="Centre-ville / Parc" />
         </div>
@@ -214,10 +239,10 @@
 
   <script>
     const users = [
-      { id: "u1", name: "Léa", gender: "Femme" },
-      { id: "u2", name: "Camille", gender: "Femme" },
-      { id: "u3", name: "Mehdi", gender: "Homme" },
-      { id: "u4", name: "Lucas", gender: "Homme" }
+      { id: "u1", name: "Léa", age: 25, gender: "Femme", vibe: "Rando tranquille, café, ciné indé" },
+      { id: "u2", name: "Camille", age: 27, gender: "Femme", vibe: "Jeux de société, balades, apéro doux" },
+      { id: "u3", name: "Mehdi", age: 29, gender: "Homme", vibe: "Switch, foot détendu, bons restos" },
+      { id: "u4", name: "Lucas", age: 24, gender: "Homme", vibe: "Rétrogaming, brocantes, balade" }
     ];
 
     const blockedPairs = [
@@ -235,11 +260,13 @@
         hostId: "u1",
         totalSpots: 4,
         mixity: "Femmes",
+        accessMode: "manual",
         zone: "Colline nord",
         exactSpot: "Parking du belvédère",
         hasGear: "Thermos café, carte du sentier",
         bringGear: "Baskets, gourde, encas",
-        participants: ["u1"]
+        participants: ["u1"],
+        pendingIds: []
       },
       {
         id: "e2",
@@ -247,11 +274,13 @@
         hostId: "u4",
         totalSpots: 3,
         mixity: "Mixte",
+        accessMode: "auto",
         zone: "Quartier gare",
         exactSpot: "Café associatif Le Coin",
         hasGear: "Console + 2 manettes",
         bringGear: "Une manette en rab ou biscuits",
-        participants: ["u4"]
+        participants: ["u4"],
+        pendingIds: []
       }
     ];
 
@@ -259,7 +288,7 @@
 
     function initSelects() {
       const sel = document.getElementById("currentUser");
-      sel.innerHTML = users.map(u => `<option value="${u.id}">${u.name} (${u.gender})</option>`).join("");
+      sel.innerHTML = users.map(u => `<option value="${u.id}">${u.name} (${u.age}a • ${u.gender})</option>`).join("");
       syncMixityRules();
     }
 
@@ -388,6 +417,7 @@
         const title = titleInput || "Sortie amicale";
         const totalSpots = Number(document.getElementById("evSpots").value) || 3;
         const mixity = totalSpots === 2 ? "Mixte" : (document.getElementById("evMixity").value || "Mixte");
+        const accessMode = document.getElementById("evAccess").value || "auto";
         const zone = document.getElementById("evZone").value.trim() || "À proximité";
         const exactSpot = document.getElementById("evExact").value.trim() || "Point de RDV confirmé aux inscrits";
         const hasGear = document.getElementById("evHasGear").value.trim();
@@ -399,18 +429,20 @@
           hostId: me.id,
           totalSpots,
           mixity,
+          accessMode,
           zone,
           exactSpot,
           hasGear,
           bringGear,
-          participants: [me.id]
+          participants: [me.id],
+          pendingIds: []
         });
 
         document.getElementById("evTitle").value = "";
         document.getElementById("evHasGear").value = "";
         document.getElementById("evBringGear").value = "";
         setTab("feed");
-        showMsg(`Sortie "${title}" publiée par ${me.name} !`);
+        showMsg(`Sortie "${title}" publiée (${accessMode === "auto" ? "validation auto" : "validation manuelle"}).`);
       } catch (err) {
         showMsg("Erreur lors de la publication : " + err.message, true);
       }
@@ -432,6 +464,13 @@
         return;
       }
 
+      if (ev.pendingIds.includes(me.id)) {
+        ev.pendingIds = ev.pendingIds.filter(id => id !== me.id);
+        render();
+        showMsg("Ta demande de participation a été annulée.");
+        return;
+      }
+
       if (ev.participants.length >= ev.totalSpots) {
         showMsg("Complet : plus de place disponible.", true);
         return;
@@ -446,9 +485,46 @@
         return;
       }
 
-      ev.participants.push(me.id);
+      if (ev.accessMode === "auto") {
+        ev.participants.push(me.id);
+        render();
+        showMsg("Validation automatique réussie ! Point de RDV précis débloqué.");
+      } else {
+        ev.pendingIds.push(me.id);
+        render();
+        showMsg("Demande envoyée au créateur pour validation manuelle.");
+      }
+    }
+
+    function reviewRequest(eventId, applicantId, accept) {
+      const me = getUser(document.getElementById("currentUser").value);
+      const ev = events.find(x => String(x.id) === String(eventId));
+      if (!ev) return;
+      if (String(ev.hostId) !== String(me.id)) {
+        showMsg("Seul le créateur peut valider ou refuser.", true);
+        return;
+      }
+
+      ev.pendingIds = ev.pendingIds.filter(id => id !== applicantId);
+      const applicant = getUser(applicantId);
+
+      if (!accept) {
+        render();
+        showMsg(`Demande de ${applicant.name} refusée.`);
+        return;
+      }
+
+      if (ev.participants.length >= ev.totalSpots) {
+        render();
+        showMsg("Impossible d'accepter : la sortie est complète.", true);
+        return;
+      }
+
+      if (!ev.participants.includes(applicantId)) {
+        ev.participants.push(applicantId);
+      }
       render();
-      showMsg("Inscription validée ! Point de RDV précis débloqué.");
+      showMsg(`${applicant.name} a été accepté(e) sur la sortie.`);
     }
 
     function render() {
@@ -479,12 +555,13 @@
         const host = getUser(ev.hostId);
         const isHost = String(ev.hostId) === String(me.id);
         const joined = ev.participants.includes(me.id);
+        const pending = ev.pendingIds.includes(me.id);
         const saved = isSaved(me.id, ev.id);
         const isConfirmingDelete = isHost && String(pendingDeleteId) === String(ev.id);
         const names = ev.participants.map(id => getUser(id).name).join(", ");
         const locationText = joined
           ? `<strong>RDV précis :</strong> ${ev.exactSpot} (${ev.zone})`
-          : `<strong>Zone :</strong> ${ev.zone} <em>(RDV exact après inscription)</em>`;
+          : `<strong>Zone :</strong> ${ev.zone} <em>(RDV exact après validation)</em>`;
 
         const gearHtml = (ev.hasGear || ev.bringGear) ? `
           <div class="gear-box">
@@ -493,7 +570,38 @@
           </div>
         ` : "";
 
+        const hostRequestsHtml = (isHost && ev.accessMode === "manual" && ev.pendingIds.length) ? `
+          <div class="req-box">
+            <strong>À valider manuellement (${ev.pendingIds.length}) :</strong>
+            ${ev.pendingIds.map(pid => {
+              const u = getUser(pid);
+              return `
+                <div class="req-item">
+                  <div><strong>${u.name}</strong> • ${u.age} ans • ${u.gender}</div>
+                  <div class="meta">Vibe : ${u.vibe}</div>
+                  <div style="margin-top:6px;" class="row">
+                    <button type="button" onclick="reviewRequest('${ev.id}', '${u.id}', true)">Accepter</button>
+                    <button type="button" class="danger" onclick="reviewRequest('${ev.id}', '${u.id}', false)">Refuser</button>
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        ` : "";
+
         const formatLabel = ev.totalSpots === 2 ? "1v1 (2 max)" : `Groupe (${ev.totalSpots} max)`;
+        const accessLabel = ev.accessMode === "auto" ? "Validation auto" : "Validation manuelle";
+
+        let mainActionBtn = "";
+        if (isHost) {
+          mainActionBtn = `<button type="button" class="danger" onclick="askDeleteEvent('${ev.id}')">Supprimer la sortie</button>`;
+        } else if (joined) {
+          mainActionBtn = `<button type="button" class="danger" onclick="toggleJoin('${ev.id}')">Me désister</button>`;
+        } else if (pending) {
+          mainActionBtn = `<button type="button" class="filter-active" onclick="toggleJoin('${ev.id}')">En attente (annuler)</button>`;
+        } else {
+          mainActionBtn = `<button type="button" onclick="toggleJoin('${ev.id}')">Je suis chaud</button>`;
+        }
 
         return `
           <div class="card">
@@ -501,18 +609,13 @@
               <strong>${ev.title}</strong>
               <span class="pill">${ev.mixity} • ${formatLabel}</span>
             </div>
-            <div class="meta">Organisé par ${host.name} • Places : ${ev.participants.length}/${ev.totalSpots} (${names})</div>
+            <div class="meta">Organisé par ${host.name} • ${accessLabel} • Places : ${ev.participants.length}/${ev.totalSpots} (${names})</div>
             <div class="meta">${locationText}</div>
             ${gearHtml}
+            ${hostRequestsHtml}
             <div style="margin-top:10px;" class="row">
               <div class="row">
-                ${
-                  isHost
-                    ? `<button type="button" class="danger" onclick="askDeleteEvent('${ev.id}')">Supprimer la sortie</button>`
-                    : joined
-                      ? `<button type="button" class="danger" onclick="toggleJoin('${ev.id}')">Me désister</button>`
-                      : `<button type="button" onclick="toggleJoin('${ev.id}')">Je suis chaud</button>`
-                }
+                ${mainActionBtn}
                 <button type="button" class="secondary" onclick="toggleSave('${ev.id}')">${saved ? "Enregistrée ✓" : "Enregistrer"}</button>
               </div>
             </div>
